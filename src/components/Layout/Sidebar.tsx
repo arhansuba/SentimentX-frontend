@@ -1,73 +1,221 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart2, Shield, AlertTriangle, Activity, Plus } from 'lucide-react';
+import {
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Collapse,
+  Badge,
+  IconButton,
+  styled
+} from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  Code as CodeIcon,
+  Notifications as NotificationsIcon,
+  SwapHoriz as SwapHorizIcon,
+  Security as SecurityIcon,
+  Settings as SettingsIcon,
+  ExpandLess,
+  ExpandMore,
+  CloudUpload as CloudUploadIcon,
+  Menu as MenuIcon
+} from '@mui/icons-material';
+import { useTheme } from '../../context/ThemeContext';
 
-const Sidebar: React.FC = () => {
+const drawerWidth = 240;
+
+const StyledDrawer = styled(Drawer)(({ theme }) => ({
+  width: drawerWidth,
+  flexShrink: 0,
+  '& .MuiDrawer-paper': {
+    width: drawerWidth,
+    boxSizing: 'border-box',
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
+
+const Sidebar = () => {
   const location = useLocation();
-  
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart2 },
-    { name: 'Contract Analysis', href: '/analysis', icon: Shield },
-    { name: 'Security Alerts', href: '/alerts', icon: AlertTriangle },
-    { name: 'Transactions', href: '/transactions', icon: Activity },
-  ];
-  
+  useTheme();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [contractsOpen, setContractsOpen] = useState(true);
+
+  const handleContractsClick = () => {
+    setContractsOpen(!contractsOpen);
+  };
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-  
-  return (
-    <div className="hidden lg:flex lg:flex-shrink-0">
-      <div className="flex flex-col w-64">
-        <div className="flex flex-col h-0 flex-1 bg-blue-800">
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <span className="text-xl font-bold text-white">AI Sentinel</span>
-            </div>
-            <nav className="mt-5 flex-1 px-2 space-y-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`${
-                    isActive(item.href)
-                      ? 'bg-blue-900 text-white'
-                      : 'text-blue-100 hover:bg-blue-700'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+
+  const menuItems = [
+    {
+      text: 'Dashboard',
+      icon: <DashboardIcon />,
+      path: '/',
+    },
+    {
+      text: 'Contracts',
+      icon: <CodeIcon />,
+      path: '/contracts',
+      submenu: [
+        {
+          text: 'Upload Contract',
+          icon: <CloudUploadIcon />,
+          path: '/upload-contract',
+        },
+        {
+          text: 'Contract Analysis',
+          icon: <SecurityIcon />,
+          path: '/contracts',
+        }
+      ]
+    },
+    {
+      text: 'Security Alerts',
+      icon: <NotificationsIcon />,
+      path: '/alerts',
+      badge: 15,
+    },
+    {
+      text: 'Transactions',
+      icon: <SwapHorizIcon />,
+      path: '/transactions',
+    },
+    {
+      text: 'Settings',
+      icon: <SettingsIcon />,
+      path: '/settings',
+    }
+  ];
+
+  const drawer = (
+    <>
+      <DrawerHeader>
+        <Box sx={{ 
+          p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          width: '100%',
+          fontWeight: 'bold'
+        }}>
+          <SecurityIcon sx={{ mr: 1 }} />
+          AI Sentinel
+        </Box>
+      </DrawerHeader>
+      <Divider />
+      <List>
+        {menuItems.map((item) => (
+          <React.Fragment key={item.text}>
+            {item.submenu ? (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={handleContractsClick}>
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.text} />
+                    {contractsOpen ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+                <Collapse in={contractsOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {item.submenu.map((subItem) => (
+                      <ListItem key={subItem.text} disablePadding>
+                        <ListItemButton
+                          component={Link}
+                          to={subItem.path}
+                          selected={isActive(subItem.path)}
+                          sx={{ pl: 4 }}
+                        >
+                          <ListItemIcon>
+                            {subItem.icon}
+                          </ListItemIcon>
+                          <ListItemText primary={subItem.text} />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </>
+            ) : (
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={isActive(item.path)}
                 >
-                  <item.icon
-                    className={`${
-                      isActive(item.href) ? 'text-white' : 'text-blue-300 group-hover:text-white'
-                    } mr-3 flex-shrink-0 h-6 w-6`}
-                  />
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          
-          <div className="p-4">
-            <button className="w-full flex items-center px-4 py-2 text-sm text-white bg-blue-700 rounded-md hover:bg-blue-600">
-              <Plus className="mr-2 h-5 w-5" />
-              Add Contract
-            </button>
-          </div>
-          
-          <div className="flex-shrink-0 flex border-t border-blue-700 p-4">
-            <div className="flex-shrink-0 w-full group block">
-              <div className="flex items-center">
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-white">Powered by</p>
-                  <p className="text-xs font-medium text-blue-200 group-hover:text-white">
-                    Google Gemini
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.text} />
+                  {item.badge && (
+                    <Badge badgeContent={item.badge} color="error" />
+                  )}
+                </ListItemButton>
+              </ListItem>
+            )}
+          </React.Fragment>
+        ))}
+      </List>
+    </>
+  );
+
+  return (
+    <>
+      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          edge="start"
+          onClick={handleDrawerToggle}
+          sx={{ position: 'fixed', top: 10, left: 10, zIndex: 1100 }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      <StyledDrawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', sm: 'block' },
+        }}
+        open
+      >
+        {drawer}
+      </StyledDrawer>
+    </>
   );
 };
 

@@ -10,7 +10,7 @@ export interface Transaction {
   severity: any;
   title: any;
   description: any;
-  analysis: any;
+  analysis: any; 
   hash: string;
   sender: string;
   receiver: string;
@@ -299,4 +299,5 @@ class TransactionService {
   }
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default new TransactionService();

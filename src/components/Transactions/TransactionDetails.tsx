@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
@@ -281,7 +282,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ initialData, tr
             Details
           </button>
         </nav>
-      </div>
+      </div> 
       <div>
       </div>
     </div>

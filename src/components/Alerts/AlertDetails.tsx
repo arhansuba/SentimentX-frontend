@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
@@ -398,5 +399,5 @@ const AlertDetails: React.FC<AlertDetailsProps> = ({ initialAlert, alertId: prop
     </div>
   );
 };
-
+ 
 export default AlertDetails;

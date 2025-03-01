@@ -3,7 +3,6 @@ import { useEffect, useCallback } from 'react';
 import { useSentinelContext } from '../context/SentinelContext';
 import transactionService, { TransactionListParams } from '../services/transactionService';
 import { TransactionType } from '@/types/transaction';
-import { AlertType } from '@/types/alert';
 import { ContractType } from '@/types/contract';
 
 export const useTransactions = () => {
@@ -68,7 +67,7 @@ export const useTransactions = () => {
       
       if (result === undefined) {
         throw new Error('Failed to monitor transaction');
-      }
+      }  
       
       // Update transactions list with new transaction
       const transactionData = result as TransactionType;

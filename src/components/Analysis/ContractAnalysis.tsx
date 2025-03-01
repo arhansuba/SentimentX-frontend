@@ -10,7 +10,7 @@ interface ContractAnalysisProps {
 }
 
 export interface Vulnerability {
-  type: string;
+  type: string; 
   risk_level: string;
   explanation: string;
   recommendation: string;
@@ -33,7 +33,7 @@ const ContractAnalysis: React.FC<ContractAnalysisProps> = ({
   const [activeTab, setActiveTab] = useState<'ai' | 'pattern'>('ai');
   const [contractData, setContractData] = useState<string>(contractCode || '');
   const [address, setAddress] = useState<string>(contractAddress || '');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [, setIsLoading] = useState<boolean>(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [patternResults, setPatternResults] = useState<any[] | null>(null);
 

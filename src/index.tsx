@@ -1,12 +1,12 @@
-// index.tsx
-import './polyfills';
-
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App';
-import { SentinelProvider } from './context/SentinelContext';
+import ReactDOM from 'react-dom/client';
+import './polyfills';
 import './index.css';
+import App from './App';
+//import reportWebVitals from './reportWebVitals';
+import { SentinelProvider } from './context/SentinelContext';
 import BigNumber from 'bignumber.js';
+import reportWebVitals from './reportWebVitals';
 
 // Configure BigNumber formatting
 BigNumber.config({
@@ -24,26 +24,21 @@ BigNumber.config({
   }
 });
 
-// Make sure this element exists in your HTML
 const rootElement = document.getElementById('root');
-
-// Check if the root element exists before mounting
-if (rootElement) {
-  const root = createRoot(rootElement);
-  
-  root.render(
-    <React.StrictMode>
-      <SentinelProvider>
-        <App />
-      </SentinelProvider>
-    </React.StrictMode>
-  );
-} else {
-  console.error('Failed to find the root element. Make sure there is a div with id "root" in your HTML file.');
+if (!rootElement) {
+  throw new Error('Failed to find the root element');
 }
 
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <SentinelProvider>
+      <App />
+    </SentinelProvider>
+  </React.StrictMode>
+);
+
 // Add basic CSS for the application
-// This assumes you're using Tailwind CSS based on your project structure
 const style = document.createElement('style');
 style.textContent = `
   /* Base styles before Tailwind loads */
@@ -122,3 +117,8 @@ window.addEventListener('load', () => {
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.querySelector('.app-loading')?.classList.add('dark');
 }
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();

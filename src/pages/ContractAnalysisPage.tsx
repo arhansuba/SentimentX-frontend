@@ -28,13 +28,13 @@ interface AnalysisResult {
   risk_score: number;
   is_anomaly?: boolean;
   summary?: string;
-  overall_assessment?: string;
+  overall_assessment?: string; 
 }
 
 const ContractAnalysisPage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
-  const { address: userAddress } = useGetAccountInfo();
+  useGetAccountInfo();
   
   const [contractDetails, setContractDetails] = useState<ContractDetails | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -56,6 +56,7 @@ const ContractAnalysisPage: React.FC = () => {
     }
     
     fetchContractDetails(address);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
   
   const fetchContractDetails = async (contractAddress: string) => {

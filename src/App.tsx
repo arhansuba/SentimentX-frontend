@@ -1,31 +1,38 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { SentinelProvider } from './context/SentinelContext';
-import { muiTheme as theme } from './utils/themes';
+import { ThemeProvider } from './context/ThemeContext';
 
-// Import your pages
+// Import components
+import Navbar from './components/Layout/Navbar';
+import Sidebar from './components/Layout/Sidebar';
+import Footer from './components/Layout/Footer';
+
+// Import pages
 import DashboardPage from './pages/DashboardPage';
 import ContractAnalysisPage from './pages/ContractAnalysisPage';
 import AlertsPage from './pages/AlertsPage';
 import TransactionsPage from './pages/TransactionsPage';
-import Navbar from './components/Layout/Navbar';
-import Sidebar from './components/Layout/Sidebar';
-import Footer from './components/Layout/Footer';
+import ContractUploaderPage from './pages/ContractUploaderPage';
 
 // Styles
 import './App.css';
 
 function App() {
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <CssBaseline />
       <SentinelProvider>
         <Router>
           <div className="app-container">
-            <Navbar toggleTheme={function (): void {
-              throw new Error('Function not implemented.');
-            } } isDarkMode={false} />
+            <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
             <div className="content-wrapper">
               <Sidebar />
               <main className="main-content">
@@ -34,6 +41,7 @@ function App() {
                   <Route path="/contracts" element={<ContractAnalysisPage />} />
                   <Route path="/alerts" element={<AlertsPage />} />
                   <Route path="/transactions" element={<TransactionsPage />} />
+                  <Route path="/upload-contract" element={<ContractUploaderPage />} />
                 </Routes>
               </main>
             </div>

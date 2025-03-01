@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Transaction {
@@ -10,7 +11,7 @@ interface Transaction {
   status: 'pending' | 'successful' | 'failed' | 'invalid';
   gasUsed: string;
   gasPrice: string;
-  fee: string;
+  fee: string; 
   data?: string;
   function?: string;
   riskScore?: number;
@@ -48,13 +49,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     total: 0,
   });
 
-  useEffect(() => {
-    if (!initialTransactions) {
-      fetchTransactions();
-    }
-  }, [initialTransactions, filter, pagination.page, pagination.size, contractAddress]);
-
-  const fetchTransactions = async () => {
+  // Define fetchTransactions with useCallback before using it in useEffect
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -103,7 +99,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [contractAddress, filter, pagination.page, pagination.size]);
+
+  useEffect(() => {
+    if (!initialTransactions) {
+      fetchTransactions();
+    }
+  }, [initialTransactions, filter, pagination.page, pagination.size, contractAddress, fetchTransactions]);
 
   const handleFilterChange = (
     category: 'status' | 'timeRange' | 'minRiskScore' | 'hasAlerts',

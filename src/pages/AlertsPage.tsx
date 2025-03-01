@@ -75,13 +75,13 @@ const AlertsMetrics: React.FC<{
         <span>Today</span>
       </div>
     </div>
-  </div>
+  </div>  
 );
 
 const AlertsPage: React.FC = () => {
   const { alertId } = useParams<{ alertId?: string }>();
   const navigate = useNavigate();
-  const { address } = useGetAccountInfo();
+  useGetAccountInfo();
   
   const [loading, setLoading] = useState<boolean>(true);
   const [metrics, setMetrics] = useState({

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -5,7 +6,7 @@ interface Alert {
   id: string;
   title: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  sourceType: 'contract' | 'transaction';
+  sourceType: 'contract' | 'transaction'; 
   sourceId: string;
   timestamp: string;
   status: 'new' | 'acknowledged' | 'resolved' | 'false_positive';

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 import api from './api';
 import { getIsLoggedIn } from '@multiversx/sdk-dapp/utils';
 import { AlertType } from '../types/alert'; // Import AlertType
@@ -10,7 +11,7 @@ export interface Alert extends AlertType { // Extend AlertType
   details?: {
     vulnerability?: {
       type: string;
-      risk_level: string;
+      risk_level: string; 
       explanation: string;
       recommendation: string;
       location?: string;

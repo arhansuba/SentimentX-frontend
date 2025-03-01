@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import SecurityScore from './SecurityScore';
 import ContractOverview from './ContractOverview';
 
 // Mock data for the hackathon demo
@@ -216,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, networkInfo, userAddress }
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="count" fill="#8884d8" />
-              </BarChart>
+              </BarChart> 
             </ResponsiveContainer>
           </div>
         </div>

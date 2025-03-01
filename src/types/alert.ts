@@ -45,4 +45,5 @@ export interface AlertType {
   title: string;
   description: string;
   timestamp: Date;
+  contractId: string; // Add this line
 }

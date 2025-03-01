@@ -1,8 +1,8 @@
 // hooks/useAlerts.ts
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSentinelContext } from '../context/SentinelContext';
 
-import { AlertType, AlertListResponse } from '../types/alert'; // Ensure AlertListResponse is imported
+import { AlertListResponse } from '../types/alert'; // Ensure AlertListResponse is imported
 import alertService from '@/services/alertService';
 
 export const useAlerts = () => {
