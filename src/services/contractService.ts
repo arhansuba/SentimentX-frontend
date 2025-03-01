@@ -1,7 +1,7 @@
 import api from './api';
 import { Address } from '@multiversx/sdk-core/out';
 import { getIsLoggedIn } from '@multiversx/sdk-dapp/utils';
-import { ContractAnalysis, ContractMetrics, ContractType, Vulnerability } from '../types/contract';
+import { ContractAnalysis, ContractMetrics, ContractType, Vulnerability, ContractListResponse } from '../types/contract';
 
 
 export interface Contract {
@@ -51,12 +51,7 @@ export interface ContractListParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface ContractListResponse {
-  contracts: Contract[];
-  total: number;
-  page: number;
-  size: number;
-}
+
 
 /**
  * ContractService provides methods to interact with smart contract data
@@ -139,43 +134,19 @@ class ContractService {
       }
 
       return {
-        id: 'exampleId',
         address,
         name: 'exampleName',
         type: 'generic',
         deploymentTransaction: 'exampleTx',
-        owner: 'exampleOwner',
-        createdAt: new Date(),
-        lastUpdated: new Date(),
-        securityScore: 100,
-        vulnerabilities: [],
-        metrics: {
-          transactionCount: 0,
-          uniqueUsers: 0,
-          totalValue: '0',
-          dailyActiveUsers: 0,
-          averageGasUsed: 0,
-          failedTransactionsRate: 0,
+        creator: 'exampleCreator',
+        creationDate: new Date(),
+        lastActivityDate: new Date(),
+        riskScore: 100,
+        anomalyDetection: {
+          isAnomaly: false,
+          confidence: 0,
         },
-        analysis: {
-          patternDetection: {
-            reentrancyRisk: false,
-            flashLoanVulnerability: false,
-            overflowUnderflowRisk: false,
-            accessControlIssues: false,
-          },
-          codeQualityScore: 100,
-          permissions: {
-            hasOwnerOnlyFunctions: false,
-            isPausable: false,
-            hasUpgradeability: false,
-            hasEmergencyWithdraw: false,
-          },
-          securityAuditInfo: undefined,
-        },
-        sourceCode: '',
-        abi: {},
-        isVerified: true,
+        transactions: [],
       };
     } catch (error) {
       console.error(`Error requesting analysis for ${address}:`, error);
@@ -256,4 +227,5 @@ class ContractService {
   }
 }
 
-export default new ContractService();
+const contractService = new ContractService();
+export default contractService;

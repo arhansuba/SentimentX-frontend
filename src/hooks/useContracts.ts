@@ -1,5 +1,5 @@
 // hooks/useContracts.ts
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSentinelContext } from '../context/SentinelContext';
 import contractService from '../services/contractService';
 import { ContractType, ContractListResponse } from '../types/contract';
@@ -25,8 +25,8 @@ export const useContracts = () => {
     }
   }, [dispatch]);
 
-  const getContractById = useCallback((id: string) => {
-    return contracts.find(contract => contract.id === id);
+  const getContractById = useCallback((address: string) => {
+    return contracts.find(contract => contract.address === address);
   }, [contracts]);
 
   const analyzeContract = useCallback(async (address: string) => {

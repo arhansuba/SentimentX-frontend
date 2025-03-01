@@ -51,7 +51,7 @@ const ContractAnalysisPage: React.FC = () => {
     
     if (!addressIsValid(address)) {
       setError('Invalid contract address format');
-      setLoading(false);
+      setLoading(false); 
       return;
     }
     
@@ -322,8 +322,7 @@ pub trait Dex:
         {/* Contract Analysis */}
         <div className="lg:col-span-2">
           <ContractAnalysis 
-            contractAddress={address}
-            contractCode={contractDetails?.sourceCode}
+            contractData={contractDetails} 
             onAnalysisComplete={handleAnalysisComplete}
           />
         </div>

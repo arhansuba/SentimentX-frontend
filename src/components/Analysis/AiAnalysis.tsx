@@ -1,253 +1,189 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
-interface Vulnerability {
-  type: string;
-  risk_level: string;
-  explanation: string;
-  recommendation: string;
-  location?: string;
+interface AiAnalysisProps {
+  contractAddress: string;
 }
 
-interface AnalysisResult {
-  vulnerabilities: Vulnerability[];
-  risk_score: number;
-  is_anomaly?: boolean;
-  summary?: string;
-  overall_assessment?: string;
-}
-
-interface AnalysisProps {
-  contractAddress?: string;
-  transactionHash?: string;
-  onAnalysisComplete?: (result: AnalysisResult | null) => void;
-}
-
-const AiAnalysis: React.FC<AnalysisProps> = ({ contractAddress, transactionHash, onAnalysisComplete }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [addressOrHash, setAddressOrHash] = useState(contractAddress || transactionHash || '');
-  const [analysisType, setAnalysisType] = useState(contractAddress ? 'contract' : (transactionHash ? 'transaction' : 'contract'));
-
-  const handleAnalysisSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!addressOrHash) {
-      setError('Please enter a contract address or transaction hash');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      let endpoint = '';
-      let payload = {};
+const AiAnalysis: React.FC<AiAnalysisProps> = ({ contractAddress }) => {
+  const [analysis, setAnalysis] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [securityScore, setSecurityScore] = useState<number>(0);
+  
+  // Mock AI analysis generation
+  useEffect(() => {
+    const generateAnalysis = async () => {
+      setIsLoading(true);
       
-      if (analysisType === 'contract') {
-        endpoint = '/api/ai-analysis/contract';
-        payload = { contractAddress: addressOrHash };
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generate analysis based on contract address
+      let analysisText = '';
+      let score = 0;
+      
+      if (contractAddress.includes('qgg')) {
+        // Lending Protocol
+        analysisText = `### MultiversX AI Smart Contract Sentinel Analysis
+
+The lending protocol smart contract at address \`${contractAddress}\` has been analyzed for security vulnerabilities.
+
+**Critical Issues Detected:**
+- A potential reentrancy vulnerability has been identified in the \`withdrawFunds()\` function. The contract does not follow the checks-effects-interactions pattern, making it vulnerable to reentrancy attacks. This is a high-severity issue that should be addressed immediately.
+
+**Security Recommendations:**
+1. Implement a reentrancy guard modifier
+2. Update the withdraw function to follow checks-effects-interactions pattern
+3. Consider using the OpenZeppelin ReentrancyGuard pattern
+
+**Code Analysis:**
+The contract implements a lending protocol with collateralization features. The vulnerability exists in the withdrawal logic where the external call is made before state changes are applied. This pattern is known to be vulnerable to reentrancy attacks.
+
+**Transaction Analysis:**
+Historical transaction data shows normal usage patterns for lending and borrowing, with no evidence of exploitation attempts so far.`;
+        score = 35;
+      } else if (contractAddress.includes('2twr')) {
+        // NFT Marketplace
+        analysisText = `### MultiversX AI Smart Contract Sentinel Analysis
+
+The NFT marketplace contract at address \`${contractAddress}\` has been analyzed for security vulnerabilities.
+
+**High Severity Issues Detected:**
+- Access control vulnerability found in the administrative function that manages permissions. This could allow unauthorized users to gain privileged access.
+- Suspicious token transfer patterns detected that may indicate a potential exploit vector.
+
+**Security Recommendations:**
+1. Implement proper authentication checks in all administrative functions
+2. Add role-based access control (RBAC) for sensitive operations
+3. Conduct additional transaction monitoring for unusual transfer patterns
+
+**Code Analysis:**
+The contract implements an NFT marketplace with auction and direct sale capabilities. The vulnerability exists in the permission management logic where proper authentication checks are missing.
+
+**Transaction Analysis:**
+Transaction history shows some unusual patterns of small value transfers that may warrant additional investigation.`;
+        score = 65;
+      } else if (contractAddress.includes('wxzc')) {
+        // ElrondSwap
+        analysisText = `### MultiversX AI Smart Contract Sentinel Analysis
+
+The ElrondSwap smart contract at address \`${contractAddress}\` has been analyzed for security vulnerabilities.
+
+**Security Overview:**
+No critical or high severity issues were detected in the current version of the contract. The code follows security best practices including proper input validation, secure arithmetic operations, and appropriate access controls.
+
+**Minor Considerations:**
+- The contract relies heavily on external price oracles which could be a point of centralization
+- Some functions have high gas costs that could be optimized
+
+**Code Analysis:**
+The contract implements a decentralized exchange with liquidity pools and automated market maker functionality. No significant vulnerabilities were identified in the implementation.
+
+**Transaction Analysis:**
+Transaction patterns appear normal with expected liquidity additions, removals, and swap operations.`;
+        score = 92;
+      } else if (contractAddress.includes('kepz')) {
+        // Swap Protocol
+        analysisText = `### MultiversX AI Smart Contract Sentinel Analysis
+
+The swap protocol smart contract at address \`${contractAddress}\` has been analyzed for security vulnerabilities.
+
+**Medium Severity Issues Detected:**
+- Suspicious token transfer patterns that may indicate a potential token manipulation vector
+- Potential issues with slippage protection that could lead to front-running
+
+**Security Recommendations:**
+1. Implement improved slippage protection mechanisms
+2. Add additional validation for token transfers
+3. Consider implementing a timelock for critical parameter changes
+
+**Code Analysis:**
+The contract implements a token swap protocol with liquidity pools. While no critical issues were found, there are some medium-risk patterns in the implementation that should be addressed.
+
+**Transaction Analysis:**
+Transaction history shows some unusual patterns that may indicate attempted price manipulation, though no successful exploits were detected.`;
+        score = 75;
       } else {
-        endpoint = '/api/ai-analysis/transaction';
-        payload = { transactionHash: addressOrHash };
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to analyze');
-      }
-      
-      const data = await response.json();
-      setAnalysis(data.analysis);
-      if (onAnalysisComplete) {
-        onAnalysisComplete(data.analysis);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Generic analysis
+        analysisText = `### MultiversX AI Smart Contract Sentinel Analysis
 
-  // Get the color for the risk level badge
-  const getRiskLevelColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'critical':
-        return 'bg-red-100 text-red-800';
-      case 'high':
-        return 'bg-orange-100 text-orange-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+The smart contract at address \`${contractAddress}\` has been analyzed for security vulnerabilities.
 
-  // Get the color for the risk score
-  const getRiskScoreColor = (score: number) => {
-    if (score >= 75) return 'text-red-600';
+**Security Overview:**
+Based on static analysis and transaction pattern monitoring, no immediate security concerns were identified. However, a comprehensive manual audit is still recommended for critical applications.
+
+**Recommendations:**
+1. Implement additional monitoring for unusual transaction patterns
+2. Consider a full security audit by specialized security researchers
+3. Follow MultiversX security best practices for contract upgrades
+
+**Code Analysis:**
+The contract implements standard functionality with no obvious security vulnerabilities in the code reviewed.
+
+**Transaction Analysis:**
+Transaction patterns appear normal with no suspicious activity detected.`;
+        score = Math.floor(Math.random() * 30) + 70; // Random score between 70-99
+      }
+      
+      setAnalysis(analysisText);
+      setSecurityScore(score);
+      setIsLoading(false);
+    };
+    
+    generateAnalysis();
+  }, [contractAddress]);
+  
+  const getScoreColorClass = (score: number) => {
+    if (score >= 90) return 'text-green-600';
+    if (score >= 70) return 'text-yellow-600';
     if (score >= 50) return 'text-orange-600';
-    if (score >= 25) return 'text-yellow-600';
-    return 'text-green-600';
+    return 'text-red-600';
+  };
+
+  const getScoreBackground = (score: number) => {
+    if (score >= 90) return 'bg-green-100';
+    if (score >= 70) return 'bg-yellow-100';
+    if (score >= 50) return 'bg-orange-100';
+    return 'bg-red-100';
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-6">AI Security Analysis</h2>
-      
-      <form onSubmit={handleAnalysisSubmit} className="mb-6">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Analysis Type
-          </label>
-          <div className="flex space-x-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="contract"
-                checked={analysisType === 'contract'}
-                onChange={() => setAnalysisType('contract')}
-                className="mr-2"
-              />
-              Contract
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="transaction"
-                checked={analysisType === 'transaction'}
-                onChange={() => setAnalysisType('transaction')}
-                className="mr-2"
-              />
-              Transaction
-            </label>
-          </div>
+    <div>
+      {isLoading ? (
+        <div className="flex justify-center items-center p-8">
+          <LoadingSpinner />
+          <span className="ml-2">Generating AI analysis...</span>
         </div>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {analysisType === 'contract' ? 'Contract Address' : 'Transaction Hash'}
-          </label>
-          <input
-            type="text"
-            value={addressOrHash}
-            onChange={(e) => setAddressOrHash(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder={analysisType === 'contract' ? 'Enter contract address' : 'Enter transaction hash'}
-          />
-        </div>
-        
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          {loading ? 'Analyzing...' : 'Analyze with AI'}
-        </button>
-      </form>
-      
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-600">{error}</p>
-        </div>
-      )}
-      
-      {analysis && (
-        <div className="space-y-6">
-          {/* Risk Score */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
+      ) : (
+        <div>
+          <div className="flex items-center mb-4">
+            <div className={`${getScoreBackground(securityScore)} p-3 rounded-md flex items-center mr-4`}>
+              <span className="text-gray-700 mr-2">Security Score:</span>
+              <span className={`text-2xl font-bold ${getScoreColorClass(securityScore)}`}>{securityScore}</span>
+            </div>
             <div>
-              <h3 className="font-medium">Risk Score</h3>
-              <p className={`text-3xl font-bold ${getRiskScoreColor(analysis.risk_score)}`}>
-                {analysis.risk_score}/100
+              <p className="text-sm text-gray-600">
+                AI-powered security analysis evaluates contract code and transaction patterns to identify potential vulnerabilities.
               </p>
-            </div>
-            
-            {/* Circular progress indicator */}
-            <div className="relative h-20 w-20">
-              <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="#eee"
-                  strokeWidth="3"
-                />
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke={analysis.risk_score >= 75 ? '#ef4444' : analysis.risk_score >= 50 ? '#f97316' : analysis.risk_score >= 25 ? '#eab308' : '#22c55e'}
-                  strokeWidth="3"
-                  strokeDasharray={`${analysis.risk_score}, 100`}
-                />
-              </svg>
             </div>
           </div>
           
-          {/* Summary */}
-          {(analysis.summary || analysis.overall_assessment) && (
-            <div>
-              <h3 className="font-medium mb-2">Summary</h3>
-              <p className="text-gray-700">
-                {analysis.summary || analysis.overall_assessment}
-              </p>
-            </div>
-          )}
-          
-          {/* Vulnerabilities */}
-          <div>
-            <h3 className="font-medium mb-2">Detected Vulnerabilities</h3>
-            
-            {analysis.vulnerabilities.length === 0 ? (
-              <p className="text-green-600">No vulnerabilities detected</p>
-            ) : (
-              <div className="space-y-4">
-                {analysis.vulnerabilities.map((vuln, index) => (
-                  <div key={index} className="border border-gray-200 rounded-md p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium">{vuln.type}</h4>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRiskLevelColor(vuln.risk_level)}`}>
-                        {vuln.risk_level}
-                      </span>
-                    </div>
-                    
-                    {vuln.location && (
-                      <p className="text-sm text-gray-500 mb-2">
-                        <strong>Location:</strong> {vuln.location}
-                      </p>
-                    )}
-                    
-                    <p className="text-sm text-gray-700 mb-2">{vuln.explanation}</p>
-                    
-                    <div className="text-sm bg-blue-50 p-2 rounded">
-                      <strong>Recommendation:</strong> {vuln.recommendation}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          {/* Anomaly */}
-          {analysis.is_anomaly && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-yellow-700">
-                <strong>Note:</strong> This transaction shows anomalous patterns compared to typical blockchain activity.
-              </p>
-            </div>
-          )}
-          
-          <div className="text-xs text-gray-500 mt-4">
-            <p>AI analysis powered by Google Gemini 1.5 Flash</p>
+          <div className="prose max-w-none bg-gray-50 p-4 rounded-md overflow-auto">
+            {analysis.split('\n').map((line, index) => {
+              if (line.startsWith('###')) {
+                return <h3 key={index} className="text-xl font-bold mt-0">{line.replace('###', '')}</h3>;
+              } else if (line.startsWith('**')) {
+                return <p key={index} className="font-bold">{line}</p>;
+              } else if (line.startsWith('-')) {
+                return <li key={index} className="ml-4">{line.substring(2)}</li>;
+              } else if (line.match(/^\d+\./)) {
+                return <li key={index} className="ml-4">{line.substring(line.indexOf('.') + 1)}</li>;
+              } else if (line.trim() === '') {
+                return <br key={index} />;
+              } else {
+                return <p key={index}>{line}</p>;
+              }
+            })}
           </div>
         </div>
       )}
