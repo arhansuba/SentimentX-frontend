@@ -129,7 +129,8 @@ const ChatAnalysisPage: React.FC = () => {
           body: JSON.stringify({
             code,
             fileName: 'chat_contract.rs',
-            contractId: dummyContractId // Add contractId parameter to fix the backend error
+            contractId: dummyContractId, // Add contractId parameter to fix the backend error
+            isTemporary: true // Add this flag
           }),
           credentials: 'omit'
         });
