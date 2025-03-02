@@ -1,43 +1,79 @@
 import React from 'react';
+import { CircularProgress, Box, Typography } from '@mui/material';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'medium' | 'large';
-  color?: string;
+  message?: string;
+  fullScreen?: boolean;
+  color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'; // New property
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'medium',
-  color = 'currentColor'
+  message,
+  fullScreen = false,
+  color = 'primary', // New property
 }) => {
-  // Determine the size of the spinner
-  const sizeClass = {
-    small: 'w-4 h-4',
-    medium: 'w-6 h-6',
-    large: 'w-8 h-8'
+  const spinnerSize = {
+    small: 24,
+    medium: 40,
+    large: 60
   }[size];
 
-  return (
-    <svg 
-      className={`animate-spin ${sizeClass}`} 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24"
+  const content = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2
+      }}
     >
-      <circle 
-        className="opacity-25" 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke={color} 
-        strokeWidth="4"
+      <CircularProgress
+        size={spinnerSize}
+        thickness={4}
+        sx={{
+          color: theme => theme.palette[color].main // Use the new color property
+        }}
       />
-      <path 
-        className="opacity-75" 
-        fill={color} 
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
+      {message && (
+        <Typography
+          variant="body2"
+          sx={{
+            mt: 2,
+            textAlign: 'center',
+            color: 'text.secondary'
+          }}
+        >
+          {message}
+        </Typography>
+      )}
+    </Box>
   );
+
+  if (fullScreen) {
+    return (
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          zIndex: 9999
+        }}
+      >
+        {content}
+      </Box>
+    );
+  }
+
+  return content;
 };
 
 export default LoadingSpinner;

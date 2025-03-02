@@ -1,221 +1,54 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+// Updated imports for HeroIcons v2
 import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Collapse,
-  Badge,
-  IconButton,
-  styled
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  Code as CodeIcon,
-  Notifications as NotificationsIcon,
-  SwapHoriz as SwapHorizIcon,
-  Security as SecurityIcon,
-  Settings as SettingsIcon,
-  ExpandLess,
-  ExpandMore,
-  CloudUpload as CloudUploadIcon,
-  Menu as MenuIcon
-} from '@mui/icons-material';
-import { useTheme } from '../../context/ThemeContext';
+  HomeIcon,
+  ShieldCheckIcon,
+  BellIcon,
+  DocumentTextIcon,
+  ArrowUpTrayIcon,
+  ChartBarIcon,
+  Cog6ToothIcon
+} from '@heroicons/react/24/outline';
 
-const drawerWidth = 240;
-
-const StyledDrawer = styled(Drawer)(({ theme }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  '& .MuiDrawer-paper': {
-    width: drawerWidth,
-    boxSizing: 'border-box',
-    borderRight: `1px solid ${theme.palette.divider}`,
-  },
-}));
-
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(0, 1),
-  ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
-}));
-
-const Sidebar = () => {
-  const location = useLocation();
-  useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [contractsOpen, setContractsOpen] = useState(true);
-
-  const handleContractsClick = () => {
-    setContractsOpen(!contractsOpen);
-  };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const menuItems = [
-    {
-      text: 'Dashboard',
-      icon: <DashboardIcon />,
-      path: '/',
-    },
-    {
-      text: 'Contracts',
-      icon: <CodeIcon />,
-      path: '/contracts',
-      submenu: [
-        {
-          text: 'Upload Contract',
-          icon: <CloudUploadIcon />,
-          path: '/upload-contract',
-        },
-        {
-          text: 'Contract Analysis',
-          icon: <SecurityIcon />,
-          path: '/contracts',
-        }
-      ]
-    },
-    {
-      text: 'Security Alerts',
-      icon: <NotificationsIcon />,
-      path: '/alerts',
-      badge: 15,
-    },
-    {
-      text: 'Transactions',
-      icon: <SwapHorizIcon />,
-      path: '/transactions',
-    },
-    {
-      text: 'Settings',
-      icon: <SettingsIcon />,
-      path: '/settings',
-    }
+const Sidebar: React.FC = () => {
+  const navItems = [
+    { to: '/', label: 'AI Chat Analysis', icon: <HomeIcon className="w-4 h-4" /> },
+    { to: '/dashboard', label: 'Dashboard', icon: <ChartBarIcon className="w-4 h-4" /> },
+    { to: '/contracts', label: 'Contracts', icon: <ShieldCheckIcon className="w-4 h-4" /> },
+    { to: '/alerts', label: 'Alerts', icon: <BellIcon className="w-4 h-4" /> },
+    { to: '/transactions', label: 'Transactions', icon: <DocumentTextIcon className="w-4 h-4" /> },
+    { to: '/upload-contract', label: 'Upload Contract', icon: <ArrowUpTrayIcon className="w-4 h-4" /> },
+    { to: '/settings', label: 'Settings', icon: <Cog6ToothIcon className="w-4 h-4" /> }
   ];
 
-  const drawer = (
-    <>
-      <DrawerHeader>
-        <Box sx={{ 
-          p: 2, 
-          display: 'flex', 
-          alignItems: 'center', 
-          width: '100%',
-          fontWeight: 'bold'
-        }}>
-          <SecurityIcon sx={{ mr: 1 }} />
-          AI Sentinel
-        </Box>
-      </DrawerHeader>
-      <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <React.Fragment key={item.text}>
-            {item.submenu ? (
-              <>
-                <ListItem disablePadding>
-                  <ListItemButton onClick={handleContractsClick}>
-                    <ListItemIcon>
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText primary={item.text} />
-                    {contractsOpen ? <ExpandLess /> : <ExpandMore />}
-                  </ListItemButton>
-                </ListItem>
-                <Collapse in={contractsOpen} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {item.submenu.map((subItem) => (
-                      <ListItem key={subItem.text} disablePadding>
-                        <ListItemButton
-                          component={Link}
-                          to={subItem.path}
-                          selected={isActive(subItem.path)}
-                          sx={{ pl: 4 }}
-                        >
-                          <ListItemIcon>
-                            {subItem.icon}
-                          </ListItemIcon>
-                          <ListItemText primary={subItem.text} />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Collapse>
-              </>
-            ) : (
-              <ListItem disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={isActive(item.path)}
-                >
-                  <ListItemIcon>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} />
-                  {item.badge && (
-                    <Badge badgeContent={item.badge} color="error" />
-                  )}
-                </ListItemButton>
-              </ListItem>
-            )}
-          </React.Fragment>
-        ))}
-      </List>
-    </>
-  );
-
   return (
-    <>
-      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ position: 'fixed', top: 10, left: 10, zIndex: 1100 }}
-        >
-          <MenuIcon />
-        </IconButton>
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <StyledDrawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-        }}
-        open
-      >
-        {drawer}
-      </StyledDrawer>
-    </>
+    <aside className="w-48 bg-[#202123] text-gray-300 shadow-md">
+      <div className="px-3 py-4">
+        <h2 className="text-base font-bold text-white mb-6 flex items-center">
+          <ShieldCheckIcon className="w-5 h-5 mr-2" />
+          AI Sentinel
+        </h2>
+        
+        <nav className="space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `
+                flex items-center px-3 py-2 rounded-md text-xs font-medium
+                ${isActive 
+                  ? 'bg-[#343541] text-white' 
+                  : 'text-gray-300 hover:bg-[#2a2b32] hover:text-white'}
+              `}
+            >
+              <span className="mr-2">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </aside>
   );
 };
 

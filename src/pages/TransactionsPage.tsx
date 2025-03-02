@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import TransactionsList from '../components/Transactions/TransactionsList';
-import TransactionDetails from '../components/Transactions/TransactionDetails';
-
 import { useGetActiveTransactionsStatus } from '@multiversx/sdk-dapp/hooks/transactions';
 import { useGetAccountInfo } from '@multiversx/sdk-dapp/hooks';
+
+const TransactionsList = lazy(() => import('../components/Transactions/TransactionsList'));
+const TransactionDetails = lazy(() => import('../components/Transactions/TransactionDetails'));
 
 // Transaction metrics summary component
 const TransactionMetrics: React.FC<{
@@ -223,12 +223,14 @@ const TransactionsPage: React.FC = () => {
         </div>
       )}
       
-      {/* Show either transaction details or transactions list based on whether a hash is present */}
-      {hash ? (
-        <TransactionDetails transactionHash={hash} />
-      ) : (
-        <TransactionsList onTransactionSelect={handleTransactionSelect} />
-      )}
+      <Suspense fallback={<div>Loading...</div>}>
+        {/* Show either transaction details or transactions list based on whether a hash is present */}
+        {hash ? (
+          <TransactionDetails transactionHash={hash} />
+        ) : (
+          <TransactionsList onTransactionSelect={handleTransactionSelect} />
+        )}
+      </Suspense>
     </div>
   );
 };

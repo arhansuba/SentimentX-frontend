@@ -1,0 +1,86 @@
+/* src/darkTheme.css */
+
+/* Global dark theme adjustments */
+body {
+    color-scheme: dark;
+  }
+  
+  /* Fix input areas */
+  textarea, input {
+    font-size: 16px !important; /* Prevents zoom on mobile */
+  }
+  
+  /* Fix scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #343541;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #565869;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #666980;
+  }
+  
+  /* Fix chat UI */
+  .max-w-4xl {
+    max-width: 48rem !important; /* Ensure chat is wide enough */
+  }
+  
+  /* Fix sidebar */
+  aside.w-48 {
+    min-width: 12rem !important;
+    max-width: 12rem !important;
+  }
+  
+  /* Fix sidebar icons */
+  aside svg {
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+  }
+  
+  /* Improve chat input appearance */
+  textarea.min-h-\[80px\] {
+    border: 1px solid #565869 !important;
+    outline: none !important;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1) !important;
+  }
+  
+  textarea.min-h-\[80px\]:focus {
+    border-color: #10a37f !important;
+    box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.3) !important;
+  }
+  
+  /* Fix code blocks */
+  pre code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+  
+  /* Fix chat content spacing */
+  .whitespace-pre-wrap p {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Fixes for mobile */
+  @media (max-width: 768px) {
+    aside.w-48 {
+      min-width: 100% !important;
+    }
+    
+    .md\:ml-48 {
+      margin-left: 0 !important;
+    }
+    
+    textarea.min-h-\[80px\] {
+      min-height: 100px !important;
+    }
+  }

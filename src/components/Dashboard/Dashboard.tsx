@@ -1,14 +1,21 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+// src/components/Dashboard/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import ContractOverview from './ContractOverview';
+import { Card } from '../common/Card';
 
-// Mock data for the hackathon demo
+import ContractOverview from './ContractOverview';
+import { Alert } from '@mui/material';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { fetchAlertData, fetchContractsData } from '../../services/fetchProxy';
+
+// Define consistent color scheme for risk levels
 const RISK_COLORS = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#22c55e',
-  none: '#3b82f6'
+  Critical: '#dc2626', // red-600
+  High: '#ea580c', // orange-600
+  Medium: '#ca8a04', // yellow-600
+  Low: '#16a34a', // green-600
+  None: '#2563eb', // blue-600
 };
 
 interface AlertStats {
@@ -16,14 +23,15 @@ interface AlertStats {
   openAlerts: number;
   highRiskAlerts: number;
   alertsByRiskLevel: {
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    none: number;
+    Critical: number;
+    High: number;
+    Medium: number;
+    Low: number;
+    None: number;
   };
   topVulnerableContracts: {
     address: string;
+    name: string;
     alertCount: number;
   }[];
   topVulnerabilityPatterns: {
@@ -33,11 +41,14 @@ interface AlertStats {
 }
 
 interface MonitoredContract {
+  id: string;
   address: string;
   name: string;
   securityScore: number;
   alertCount: number;
   highRiskAlerts: number;
+  lastActivityDate: string;
+  deploymentTransaction: string;
 }
 
 interface DashboardProps {
@@ -50,81 +61,58 @@ interface DashboardProps {
     anomaliesDetected: number;
     securityScore: number;
   };
+  //userAddress: string;
   networkInfo: {
     chainId: string;
-  };
-  userAddress: string;
+  }
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ stats, networkInfo, userAddress }) => {
+const Dashboard: React.FC<DashboardProps> = (props) => {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [alertStats, setAlertStats] = useState<AlertStats | null>(null);
   const [monitoredContracts, setMonitoredContracts] = useState<MonitoredContract[]>([]);
+  const [latestAlerts, setLatestAlerts] = useState<any[]>([]);
+  const [networkInfo, setNetworkInfo] = useState({ chainId: 'D' });
 
   useEffect(() => {
-    // In a real implementation, these would be API calls
-    // For the hackathon demo, we'll use mock data that would be returned from our backend
+    fetchComponentData();
+  }, []);
+
+  const fetchComponentData = async () => {
+    setLoading(true);
+    setError(null);
     
-    setTimeout(() => {
-      setAlertStats({
-        totalAlerts: 87,
-        openAlerts: 42,
-        highRiskAlerts: 15,
-        alertsByRiskLevel: {
-          critical: 5,
-          high: 10,
-          medium: 27,
-          low: 45,
-          none: 0,
-        },
-        topVulnerableContracts: [
-          { address: 'erd1qqqqqqqqqqqqqpgq5l7ks6p8x20u8ehc3kr0gs35l687n24ay40q2f254k', alertCount: 23 },
-          { address: 'erd1qqqqqqqqqqqqqpgqje5ntxlg77zkgvqtc2kzgq05ucrztc8a59asgmjp0q', alertCount: 18 },
-          { address: 'erd1qqqqqqqqqqqqqpgqgrl5ukxzrugz8t850ktgtmtlyh3ygzj3y40qcnkepz', alertCount: 15 },
-        ],
-        topVulnerabilityPatterns: [
-          { patternId: 'reentrancy', count: 12 },
-          { patternId: 'flash-loan-attack', count: 8 },
-          { patternId: 'access-control', count: 24 },
-          { patternId: 'integer-overflow', count: 7 },
-          { patternId: 'suspicious-token-transfers', count: 31 },
-        ]
-      });
-      
-      setMonitoredContracts([
-        { 
-          address: 'erd1qqqqqqqqqqqqqpgq5l7ks6p8x20u8ehc3kr0gs35l687n24ay40q2f254k',
-          name: 'Lending Protocol',
-          securityScore: 68,
-          alertCount: 23,
-          highRiskAlerts: 7
-        },
-        { 
-          address: 'erd1qqqqqqqqqqqqqpgqje5ntxlg77zkgvqtc2kzgq05ucrztc8a59asgmjp0q',
-          name: 'NFT Marketplace',
-          securityScore: 82,
-          alertCount: 18,
-          highRiskAlerts: 3
-        },
-        { 
-          address: 'erd1qqqqqqqqqqqqqpgqgrl5ukxzrugz8t850ktgtmtlyh3ygzj3y40qcnkepz',
-          name: 'Swap Protocol',
-          securityScore: 74,
-          alertCount: 15,
-          highRiskAlerts: 5
-        },
+    try {
+      // Get data using our proxy fetchers with built-in fallbacks
+      const [alertData, contractsData] = await Promise.all([
+        fetchAlertData(),
+        fetchContractsData()
       ]);
       
+      // Set component state with fetched or fallback data
+      setAlertStats(alertData.alertStats);
+      setLatestAlerts(alertData.latestAlerts);
+      setMonitoredContracts(contractsData.contracts);
+      
+      // Use network info from props (already fetched in parent)
+      setNetworkInfo(props.networkInfo || { chainId: 'D' });
+    } catch (err: any) {
+      console.error('Error fetching dashboard component data:', err);
+      setError('Failed to load some dashboard components.');
+      // No need to call setFallbackData() since our fetchers handle fallbacks
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
 
   // Transform alert stats for pie chart
   const alertsByRiskLevelData = alertStats ? 
     Object.entries(alertStats.alertsByRiskLevel)
       .filter(([_, value]) => value > 0)
       .map(([level, count]) => ({ 
-        name: level.charAt(0).toUpperCase() + level.slice(1), 
+        name: level, 
         value: count 
       })) : [];
 
@@ -136,202 +124,294 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, networkInfo, userAddress }
         .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' '),
       count
-    })) : [];
+    })).sort((a, b) => b.count - a.count) : [];
+
+  // Format timestamp
+  const formatTimeAgo = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="large" message="Loading dashboard data..." />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">MultiversX AI Smart Contract Sentinel</h1>
+    <div className="px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">MultiversX AI Smart Contract Sentinel</h1>
+      
+      {error && (
+        <Alert 
+          severity="error" 
+          className="mb-6"
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+      
+      <button 
+        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition mb-8"
+        onClick={fetchComponentData}
+      >
+        Refresh Data
+      </button>
       
       {/* Stats overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-medium text-gray-500">Total Alerts</h3>
-          <p className="text-3xl font-bold">{alertStats?.totalAlerts}</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <h2 className="text-xl font-bold mb-4">Total Alerts</h2>
+          <div className="flex items-end">
+            <span className="text-4xl font-bold">{alertStats?.totalAlerts || 0}</span>
+            <span className="ml-2 text-sm text-gray-500 mb-1">alerts detected</span>
+          </div>
+        </Card>
         
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-medium text-gray-500">Open Alerts</h3>
-          <p className="text-3xl font-bold text-amber-500">{alertStats?.openAlerts}</p>
-        </div>
+        <Card>
+          <h2 className="text-xl font-bold mb-4">Open Alerts</h2>
+          <div className="flex items-end">
+            <span className="text-4xl font-bold text-amber-500">{alertStats?.openAlerts || 0}</span>
+            <span className="ml-2 text-sm text-gray-500 mb-1">need attention</span>
+          </div>
+        </Card>
         
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-medium text-gray-500">High Risk Alerts</h3>
-          <p className="text-3xl font-bold text-red-500">{alertStats?.highRiskAlerts}</p>
-        </div>
+        <Card>
+          <h2 className="text-xl font-bold mb-4">High Risk Alerts</h2>
+          <div className="flex items-end">
+            <span className="text-4xl font-bold text-red-500">{alertStats?.highRiskAlerts || 0}</span>
+            <span className="ml-2 text-sm text-gray-500 mb-1">critical issues</span>
+          </div>
+        </Card>
         
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-medium text-gray-500">Monitored Contracts</h3>
-          <p className="text-3xl font-bold text-blue-500">{monitoredContracts.length}</p>
-        </div>
+        <Card>
+          <h2 className="text-xl font-bold mb-4">Monitored Contracts</h2>
+          <div className="flex items-end">
+            <span className="text-4xl font-bold text-blue-500">{monitoredContracts.length}</span>
+            <span className="ml-2 text-sm text-gray-500 mb-1">under protection</span>
+          </div>
+        </Card>
       </div>
       
       {/* Charts row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-6">Alerts by Risk Level</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <Card>
+          <h2 className="text-xl font-bold mb-4">Alerts by Risk Level</h2>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={alertsByRiskLevelData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {alertsByRiskLevelData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={RISK_COLORS[entry.name.toLowerCase() as keyof typeof RISK_COLORS]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {alertsByRiskLevelData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={alertsByRiskLevelData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={120}
+                    innerRadius={60}
+                    fill="#8884d8"
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
+                    {alertsByRiskLevelData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={RISK_COLORS[entry.name as keyof typeof RISK_COLORS]} 
+                        stroke="#fff"
+                        strokeWidth={1}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} alerts`, 'Count']} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value) => <span style={{ color: RISK_COLORS[value as keyof typeof RISK_COLORS] }}>{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">No alerts data available</p>
+              </div>
+            )}
           </div>
-        </div>
+        </Card>
         
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-6">Top Vulnerability Patterns</h2>
+        <Card>
+          <h2 className="text-xl font-bold mb-4">Top Vulnerability Patterns</h2>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={vulnerabilityPatternsData}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" width={150} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#8884d8" />
-              </BarChart> 
-            </ResponsiveContainer>
+            {vulnerabilityPatternsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={vulnerabilityPatternsData.slice(0, 5)}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={150} />
+                  <Tooltip formatter={(value) => [`${value} instances`, 'Count']} />
+                  <Legend />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#3b82f6"
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart> 
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">No vulnerability patterns data available</p>
+              </div>
+            )}
           </div>
-        </div>
+        </Card>
       </div>
       
       {/* Monitored contracts section */}
-      <div className="bg-white rounded-lg p-6 shadow mb-8">
-        <h2 className="text-xl font-semibold mb-6">Monitored Contracts</h2>
-        <div className="space-y-6">
-          {monitoredContracts.map((contract) => (
-            <ContractOverview key={contract.address} contract={[contract]} />
-          ))}
-        </div>
-      </div>
-      
-      {/* Latest alerts section */}
-      <div className="bg-white rounded-lg p-6 shadow">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Latest Alerts</h2>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+      <Card 
+        title="Monitored Contracts" 
+        headerAction={
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            onClick={() => window.location.href = '/contracts'}
+          >
             View All
           </button>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contract
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Risk Level
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Vulnerability
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Timestamp
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  Lending Protocol
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                    Critical
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  Reentrancy
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  2 minutes ago
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Open
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  NFT Marketplace
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
-                    High
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  Access Control
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  15 minutes ago
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Open
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  Swap Protocol
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Medium
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  Suspicious Token Transfers
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  1 hour ago
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    Resolved
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        }
+        className="mb-8"
+      >
+        {monitoredContracts.length > 0 ? (
+          <div className="space-y-6">
+            {monitoredContracts.slice(0, 3).map((contract) => (
+              <ContractOverview 
+                key={contract.id} 
+                contract={contract} 
+                className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-500 mb-4">No contracts are being monitored yet.</p>
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+              onClick={() => window.location.href = '/upload-contract'}
+            >
+              Upload Your First Contract
+            </button>
+          </div>
+        )}
+      </Card>
+      
+      {/* Latest alerts section */}
+      <Card 
+        title="Latest Alerts" 
+        headerAction={
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            onClick={() => window.location.href = '/alerts'}
+          >
+            View All
+          </button>
+        }
+      >
+        {latestAlerts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contract
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Risk Level
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vulnerability
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Timestamp
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {latestAlerts.map((alert) => (
+                  <tr key={alert.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {alert.contractName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${alert.riskLevel === 'Critical' ? 'bg-red-100 text-red-800' : 
+                          alert.riskLevel === 'High' ? 'bg-orange-100 text-orange-800' : 
+                          alert.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-green-100 text-green-800'}`}>
+                        {alert.riskLevel}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {alert.vulnerabilityType}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatTimeAgo(alert.timestamp)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${alert.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : 
+                          alert.status === 'Acknowledged' ? 'bg-blue-100 text-blue-800' : 
+                          'bg-green-100 text-green-800'}`}>
+                        {alert.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <button 
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        onClick={() => window.location.href = `/alerts/${alert.id}`}
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-gray-500 mb-4">No alerts have been detected yet.</p>
+            <p className="text-sm text-gray-400">
+              Alerts will appear here when vulnerabilities are detected in your contracts.
+            </p>
+          </div>
+        )}
+      </Card>
+      
+      {/* Network info */}
+      <div className="mt-8 bg-gray-100 p-4 rounded-md text-sm text-gray-600">
+        <p>Network: MultiversX {networkInfo.chainId === 'D' ? 'Devnet' : 
+                              networkInfo.chainId === 'T' ? 'Testnet' : 'Mainnet'}</p>
       </div>
-      <div>Contracts Monitored: {stats.contractsMonitored}</div>
-      <div>Network Chain ID: {networkInfo.chainId}</div>
-      <div>User Address: {userAddress}</div>
     </div>
   );
 };

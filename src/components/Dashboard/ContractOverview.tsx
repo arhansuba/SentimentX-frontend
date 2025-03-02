@@ -1,80 +1,125 @@
+// src/components/Dashboard/ContractOverview.tsx
 import React from 'react';
-import SecurityScore from './SecurityScore';
+import { Link } from 'react-router-dom';
+import { LinearProgress, Typography, Box, Chip } from '@mui/material';
+import { SecurityOutlined, WarningAmber } from '@mui/icons-material';
 
-interface Contract {
-  address: string;
-  name: string;
-  securityScore: number;
-  alertCount: number;
-  highRiskAlerts: number;
+interface ContractProps {
+  contract: any;
+  className?: string;
 }
 
-interface ContractOverviewProps {
-  contract: Contract[];
-}
+const ContractOverview: React.FC<ContractProps> = ({ contract, className = '' }) => {
+  // Function to calculate security score color
+  const getSecurityScoreColor = (score: number) => {
+    if (score >= 80) return 'success';
+    if (score >= 60) return 'warning';
+    return 'error';
+  };
 
-const ContractOverview: React.FC<ContractOverviewProps> = ({ contract }) => {
-  // Function to truncate the address for display
-  const truncateAddress = (address: string) => {
-    if (address.length <= 12) return address;
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  // Function to format contract address for display
+  const formatAddress = (address: string) => {
+    if (address.length <= 16) return address;
+    return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+  };
+
+  // Function to format date
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
 
   return (
-    <>
-      {contract.map((c) => (
-        <div key={c.address} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-            {/* Contract info */}
-            <div className="mb-4 md:mb-0">
-              <h3 className="text-lg font-medium">{c.name}</h3>
-              <div className="flex items-center mt-1">
-                <span className="text-sm text-gray-500">{truncateAddress(c.address)}</span>
-                <button
-                  className="ml-2 text-blue-500 hover:text-blue-700 text-xs"
-                  onClick={() => navigator.clipboard.writeText(c.address)}
-                  title="Copy address"
-                >
-                  Copy
-                </button>
-              </div>
-              
-              {/* Alert stats */}
-              <div className="flex items-center space-x-4 mt-3">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                  <span className="text-sm">{c.alertCount} Alerts</span>
-                </div>
-                
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                  <span className="text-sm">{c.highRiskAlerts} High Risk</span>
-                </div>
-              </div>
+    <div className={`${className}`}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center">
+            <h3 className="text-lg font-semibold">{contract.name || 'Unnamed Contract'}</h3>
+            {contract.alertCount > 0 && (
+              <Chip 
+                label={`${contract.alertCount} Alert${contract.alertCount !== 1 ? 's' : ''}`}
+                color={contract.highRiskAlerts > 0 ? 'error' : 'warning'}
+                size="small"
+                icon={<WarningAmber />}
+                className="ml-2"
+              />
+            )}
+          </div>
+          
+          <div className="text-sm text-gray-500 mt-1">
+            <a 
+              href={`https://explorer.multiversx.com/address/${contract.address}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-blue-600 underline underline-offset-2"
+            >
+              {formatAddress(contract.address)}
+            </a>
+          </div>
+          
+          <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
+            <div>
+              <span className="font-medium">Last Activity:</span> {formatDate(contract.lastActivityDate)}
             </div>
-            
-            {/* Security score */}
-            <div className="flex items-center">
-              <SecurityScore score={c.securityScore} size="sm" />
-              
-              <div className="ml-6 space-y-2">
-                <button
-                  className="block w-full px-3 py-1.5 text-xs font-medium text-center text-white bg-blue-600 rounded hover:bg-blue-700"
+            {contract.deploymentTransaction && (
+              <div>
+                <span className="font-medium">TX:</span>{' '}
+                <a 
+                  href={`https://explorer.multiversx.com/transactions/${contract.deploymentTransaction}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-blue-600 underline underline-offset-2"
                 >
-                  Analyze
-                </button>
-                
-                <button
-                  className="block w-full px-3 py-1.5 text-xs font-medium text-center text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  View Alerts
-                </button>
+                  {contract.deploymentTransaction.substring(0, 8)}...
+                </a>
               </div>
-            </div>
+            )}
           </div>
         </div>
-      ))}
-    </>
+        
+        <div className="flex flex-col md:items-end">
+          <div className="flex items-center mb-2">
+            <SecurityOutlined 
+              fontSize="small" 
+              color={getSecurityScoreColor(contract.securityScore)} 
+              className="mr-1"
+            />
+            <Typography variant="subtitle2">
+              Security Score: {contract.securityScore}/100
+            </Typography>
+          </div>
+          
+          <Box sx={{ width: '100%', maxWidth: 250 }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={contract.securityScore} 
+              color={getSecurityScoreColor(contract.securityScore)}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 4,
+                }
+              }}
+            />
+          </Box>
+          
+          <div className="mt-4">
+            <Link
+              to={`/contracts/${contract.id}`}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+            >
+              View Analysis
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

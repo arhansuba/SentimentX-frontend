@@ -1,8 +1,8 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
-import { getTheme } from '@/utils/themes';
-
+// Update the import path to use a relative path
+import { getTheme } from '../utils/themes';
 
 type ThemeContextType = {
   mode: PaletteMode;

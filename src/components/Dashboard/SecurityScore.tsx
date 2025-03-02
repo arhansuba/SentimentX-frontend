@@ -1,95 +1,137 @@
+// src/components/Dashboard/SecurityScore.tsx
 import React from 'react';
+import { Box, Typography, CircularProgress } from '@mui/material';
+import { GppGoodOutlined, GppMaybeOutlined, GppBadOutlined } from '@mui/icons-material';
 
 interface SecurityScoreProps {
   score: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'small' | 'medium' | 'large';
   showLabel?: boolean;
+  className?: string;
 }
 
-const SecurityScore: React.FC<SecurityScoreProps> = ({ 
-  score, 
-  size = 'md',
-  showLabel = true
+const SecurityScore: React.FC<SecurityScoreProps> = ({
+  score,
+  size = 'medium',
+  showLabel = true,
+  className = '',
 }) => {
-  // Determine the color based on the score
+  // Get color based on score
   const getColor = (score: number) => {
-    if (score >= 90) return '#22c55e'; // Green
-    if (score >= 70) return '#84cc16'; // Light green
-    if (score >= 50) return '#eab308'; // Yellow
-    if (score >= 30) return '#f97316'; // Orange
-    return '#ef4444'; // Red
+    if (score >= 80) return '#22c55e'; // green-500
+    if (score >= 60) return '#eab308'; // yellow-500
+    if (score >= 40) return '#f97316'; // orange-500
+    return '#ef4444'; // red-500
   };
 
-  // Determine the risk level based on the score
-  const getRiskLevel = (score: number) => {
-    if (score >= 90) return 'Very Safe';
-    if (score >= 70) return 'Safe';
-    if (score >= 50) return 'Moderate Risk';
-    if (score >= 30) return 'High Risk';
+  // Get security label based on score
+  const getSecurityLabel = (score: number) => {
+    if (score >= 80) return 'Safe';
+    if (score >= 60) return 'Moderate Risk';
+    if (score >= 40) return 'High Risk';
     return 'Critical Risk';
   };
 
-  // Calculate the size of the circle
-  const getSize = () => {
-    switch (size) {
-      case 'sm': return 60;
-      case 'lg': return 120;
-      default: return 80;
-    }
+  // Get appropriate icon based on score
+  const getSecurityIcon = (score: number) => {
+    if (score >= 80) return <GppGoodOutlined style={{ color: getColor(score) }} />;
+    if (score >= 60) return <GppMaybeOutlined style={{ color: getColor(score) }} />;
+    return <GppBadOutlined style={{ color: getColor(score) }} />;
   };
 
-  const circleSize = getSize();
-  const fontSize = size === 'sm' ? 'text-xl' : size === 'lg' ? 'text-3xl' : 'text-2xl';
-  const labelSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs';
+  // Size variants
+  const sizeVariants = {
+    small: {
+      width: 60,
+      height: 60,
+      fontSize: '0.75rem',
+      scoreSize: '1.25rem',
+      thickness: 4,
+    },
+    medium: {
+      width: 100,
+      height: 100,
+      fontSize: '0.875rem',
+      scoreSize: '1.75rem',
+      thickness: 6,
+    },
+    large: {
+      width: 150,
+      height: 150,
+      fontSize: '1rem',
+      scoreSize: '2.5rem',
+      thickness: 8,
+    },
+  };
 
-  // Calculate the circumference and offset for the progress circle
-  const radius = (circleSize / 2) - 5;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const currentSize = sizeVariants[size];
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: circleSize, height: circleSize }}>
-        {/* Background circle */}
-        <svg width={circleSize} height={circleSize} viewBox={`0 0 ${circleSize} ${circleSize}`}>
-          <circle
-            cx={circleSize / 2}
-            cy={circleSize / 2}
-            r={radius}
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="5"
-          />
-          {/* Progress circle */}
-          <circle
-            cx={circleSize / 2}
-            cy={circleSize / 2}
-            r={radius}
-            fill="none"
-            stroke={getColor(score)}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            transform={`rotate(-90 ${circleSize / 2} ${circleSize / 2})`}
-          />
-        </svg>
-        {/* Score text */}
-        <div
-          className={`absolute inset-0 flex flex-col items-center justify-center ${fontSize} font-bold`}
-          style={{ color: getColor(score) }}
+    <Box className={`flex flex-col items-center ${className}`}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <CircularProgress
+          variant="determinate"
+          value={score}
+          size={currentSize.width}
+          thickness={currentSize.thickness}
+          sx={{
+            color: getColor(score),
+            '& .MuiCircularProgress-circle': {
+              strokeLinecap: 'round',
+            },
+          }}
+        />
+        <Box
+          sx={{
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+          }}
         >
-          {score}
-        </div>
-      </div>
+          <Typography
+            variant="h6"
+            component="div"
+            fontWeight="bold"
+            sx={{ fontSize: currentSize.scoreSize }}
+          >
+            {score}
+          </Typography>
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ fontSize: currentSize.fontSize, opacity: 0.7 }}
+          >
+            /100
+          </Typography>
+        </Box>
+      </Box>
       
-      {/* Label below */}
       {showLabel && (
-        <div className={`mt-2 ${labelSize} font-medium text-gray-500`}>
-          {getRiskLevel(score)}
-        </div>
+        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+            {getSecurityIcon(score)}
+            <Typography
+              variant="subtitle2"
+              component="div"
+              fontWeight="medium"
+              sx={{ ml: 0.5, color: getColor(score) }}
+            >
+              {getSecurityLabel(score)}
+            </Typography>
+          </Box>
+          
+          <Typography variant="caption" color="text.secondary">
+            Security Score
+          </Typography>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 
