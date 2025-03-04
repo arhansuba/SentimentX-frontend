@@ -1,5 +1,7 @@
 // src/pages/ChatAnalysisPage.tsx - Fixed contractId issue
 import React, { useState, useRef, useEffect } from 'react';
+import { executeCommand } from '../services/chatCommands';
+import ReactMarkdown from 'react-markdown';
 
 // Message types for the chat
 type MessageType = 'user' | 'assistant' | 'system';
@@ -27,6 +29,8 @@ const ChatAnalysisPage: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Create a dummy contract ID for chat analysis
   const [dummyContractId] = useState(`temp-${Date.now()}`);
@@ -52,19 +56,13 @@ const ChatAnalysisPage: React.FC = () => {
     
     if (!inputValue.trim()) return;
     
-    // Check if input looks like code (contains Rust-specific syntax)
-    const isCode = inputValue.includes('#[') || 
-                   inputValue.includes('fn ') || 
-                   inputValue.includes('pub struct') ||
-                   inputValue.includes('impl ');
-    
     // Add user message to chat
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
       content: inputValue,
       timestamp: new Date(),
-      code: isCode
+      code: false // Will check for code later
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -74,11 +72,29 @@ const ChatAnalysisPage: React.FC = () => {
       textareaRef.current.style.height = '80px';
     }
     
-    // If input appears to be code, analyze it
+    // Check if the input is a command
+    if (inputValue.startsWith('/')) {
+      await handleCommand(inputValue);
+      return;
+    }
+    
+    // Check if input looks like code
+    const isCode = inputValue.includes('#[') || 
+                  inputValue.includes('fn ') || 
+                  inputValue.includes('pub struct') ||
+                  inputValue.includes('impl ');
+    
+    // If it's code, update the message's code flag
     if (isCode) {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === userMessage.id ? { ...msg, code: true } : msg
+        )
+      );
       await analyzeCode(inputValue);
     } else {
-      // Add a loading message to simulate typing
+      // Handle as regular chat
+      // Add typing indicator
       const typingMessage: ChatMessage = {
         id: `system-${Date.now()}`,
         type: 'system',
@@ -88,7 +104,7 @@ const ChatAnalysisPage: React.FC = () => {
       
       setMessages(prev => [...prev, typingMessage]);
       
-      // Simulate typing delay for non-code responses
+      // Respond to regular chat
       setTimeout(() => {
         const responseMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
@@ -100,6 +116,53 @@ const ChatAnalysisPage: React.FC = () => {
         // Replace typing indicator with response
         setMessages(prev => [...prev.filter(msg => msg.id !== typingMessage.id), responseMessage]);
       }, 1000);
+    }
+  };
+  
+  // NEW: Handle command execution
+  const handleCommand = async (commandText: string) => {
+    // Add typing indicator
+    const typingMessage: ChatMessage = {
+      id: `system-${Date.now()}`,
+      type: 'system',
+      content: 'processing command...',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, typingMessage]);
+    
+    // Parse the command and arguments
+    const parts = commandText.trim().split(' ');
+    const command = parts[0].toLowerCase();
+    const args = parts.slice(1).join(' ');
+    
+    try {
+      // Execute the command
+      const result = await executeCommand(command, args);
+      
+      // Add response
+      const responseMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: result,
+        timestamp: new Date()
+      };
+      
+      // Replace typing indicator with response
+      setMessages(prev => [...prev.filter(msg => msg.id !== typingMessage.id), responseMessage]);
+    } catch (error) {
+      console.error('Error executing command:', error);
+      
+      // Add error response
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: "Sorry, I encountered an error processing that command. Please try again.",
+        timestamp: new Date()
+      };
+      
+      // Replace typing indicator with error
+      setMessages(prev => [...prev.filter(msg => msg.id !== typingMessage.id), errorMessage]);
     }
   };
   
@@ -313,40 +376,291 @@ const ChatAnalysisPage: React.FC = () => {
       );
     }
     
-    // Render markdown-like content (basic implementation)
-    const content = message.content
-      .split('\n')
-      .map((line, i) => {
-        if (line.startsWith('##')) {
-          return <h2 key={i} className="text-xl font-bold mt-4 mb-2">{line.replace('##', '').trim()}</h2>;
-        }
-        if (line.startsWith('###')) {
-          return <h3 key={i} className="text-lg font-bold mt-3 mb-2">{line.replace('###', '').trim()}</h3>;
-        }
-        if (line.startsWith('**') && line.endsWith('**')) {
-          return <p key={i} className="font-bold my-1">{line.replace(/^\*\*|\*\*$/g, '')}</p>;
-        }
-        if (line.startsWith('- ')) {
-          return <p key={i} className="ml-4 my-1">• {line.substring(2)}</p>;
-        }
-        if (line.startsWith('```rust') && line.endsWith('```')) {
-          const codeContent = line.replace('```rust', '').replace('```', '');
-          return (
-            <div key={i} className="bg-gray-800 text-white p-4 rounded-md overflow-x-auto my-2 font-mono">
-              <pre className="text-sm whitespace-pre-wrap">
-                <code>{codeContent}</code>
-              </pre>
-            </div>
-          );
-        }
-        return <p key={i} className="my-1">{line}</p>;
-      });
+    // Use ReactMarkdown for better formatting
+    return (
+      <div className="markdown-content text-white">
+        <ReactMarkdown>
+          {message.content}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    // Send a welcome message with instructions on first load
+    setTimeout(() => {
+      const helpMessage: ChatMessage = {
+        id: `assistant-welcome`,
+        type: 'assistant',
+        content: `Welcome to Smart Contract Sentinel! You can:
+
+1. **Paste code** directly to analyze for vulnerabilities
+2. Use commands like \`/contracts\` to view monitored contracts
+3. Type \`/help\` to see all available commands
+
+What would you like to do?`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, helpMessage]);
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+/ or Cmd+/ to show help
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        handleCommand('/help');
+      }
+    };
     
-    return <div className="whitespace-pre-wrap">{content}</div>;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Add file drop handling
+  const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    
+    // Check file type
+    if (!file.name.endsWith('.rs')) {
+      // Add message
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: "Please upload a Rust (.rs) smart contract file.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+    
+    // Add user message showing file upload
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: `Uploaded: ${file.name}`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Add loading message
+    const loadingMessage: ChatMessage = {
+      id: `system-${Date.now()}`,
+      type: 'system',
+      content: `Analyzing ${file.name}...`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, loadingMessage]);
+    
+    // Handle file upload
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('contractId', `temp-${Date.now()}`);
+      
+      const response = await fetch('/ai-analysis/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Format response
+      let analysisContent = formatAnalysisResult(result);
+      
+      // Add analysis response
+      const analysisMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: analysisContent,
+        timestamp: new Date(),
+        analysis: result
+      };
+      
+      // Replace loading message
+      setMessages(prev => [...prev.filter(msg => msg.id !== loadingMessage.id), analysisMessage]);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: "Sorry, I couldn't analyze that file. Please try pasting the code directly instead.",
+        timestamp: new Date()
+      };
+      
+      // Replace loading message
+      setMessages(prev => [...prev.filter(msg => msg.id !== loadingMessage.id), errorMessage]);
+    }
+  };
+
+  // Helper function to format analysis results
+  const formatAnalysisResult = (result: any) => {
+    // Similar to your existing analysis formatting code
+    let analysisContent = '';
+    
+    if (result.vulnerabilities && result.vulnerabilities.length > 0) {
+      // Format vulnerabilities as before
+      result.vulnerabilities.forEach((vuln: any, index: number) => {
+        analysisContent += `**${index + 1}. ${vuln.type || 'Vulnerability'}** (${vuln.risk_level || 'Unknown'} risk)\n`;
+        analysisContent += `- Location: ${vuln.location || 'Unknown'}\n`;
+        analysisContent += `- Explanation: ${vuln.explanation || 'No explanation provided'}\n`;
+        analysisContent += `- Recommendation: ${vuln.recommendation || 'No recommendation provided'}\n\n`;
+      });
+    } else {
+      // No vulnerabilities format
+      analysisContent = `## Analysis Results\n\nSecurity Score: ${result.securityScore || result.risk_score || 95}/100\n\nNo vulnerabilities were detected in this code. However, this doesn't guarantee the code is completely secure. Always perform thorough testing and auditing before deploying to production.`;
+    }
+    
+    return analysisContent;
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    // Check file type
+    if (!file.name.endsWith('.rs')) {
+      // Add message
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: "Please upload a Rust (.rs) smart contract file.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+    
+    // Add user message showing file upload
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: `Uploaded: ${file.name}`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Add loading message
+    const loadingMessage: ChatMessage = {
+      id: `system-${Date.now()}`,
+      type: 'system',
+      content: `Analyzing ${file.name}...`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, loadingMessage]);
+    setIsAnalyzing(true);
+    
+    // Handle file upload
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('contractId', `temp-${Date.now()}`);
+      
+      const response = await fetch('/ai-analysis/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Format response
+      let analysisContent = formatAnalysisResult(result);
+      
+      // Add analysis response
+      const analysisMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: analysisContent,
+        timestamp: new Date(),
+        analysis: result
+      };
+      
+      // Replace loading message
+      setMessages(prev => [...prev.filter(msg => msg.id !== loadingMessage.id), analysisMessage]);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: "Sorry, I couldn't analyze that file. Please try pasting the code directly instead.",
+        timestamp: new Date()
+      };
+      
+      // Replace loading message
+      setMessages(prev => [...prev.filter(msg => msg.id !== loadingMessage.id), errorMessage]);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleFileButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    handleFileUpload(file);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#343541]">
+    <div 
+      className="flex flex-col h-screen bg-[#343541]"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleFileDrop}
+    >
+      {/* File drop overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-[#444654] p-8 rounded-lg text-white text-center">
+            <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <p className="text-xl font-semibold mb-2">Drop your Rust contract file here</p>
+            <p className="text-gray-300">File will be uploaded and analyzed</p>
+          </div>
+        </div>
+      )}
+      
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto p-4 pt-6">
         <div className="max-w-4xl mx-auto">
@@ -432,12 +746,30 @@ const ChatAnalysisPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
             </button>
+            <button
+              type="button"
+              onClick={handleFileButtonClick}
+              className="absolute right-14 bottom-3 p-2 rounded-md text-white bg-[#10a37f] hover:bg-[#0d8c6e] transition-colors"
+            >
+              Upload File
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              className="hidden"
+            />
           </div>
           <p className="text-xs text-gray-400 mt-2 text-center">
             Smart Contract Sentinel AI analyzes your MultiversX Rust smart contracts for security vulnerabilities.
             Press Shift+Enter for a new line.
           </p>
         </form>
+      </div>
+
+      {/* Footer with keyboard shortcuts */}
+      <div className="text-xs text-gray-500 text-center py-2 border-t border-gray-700">
+        <p>Keyboard shortcuts: Ctrl+/ for help | Shift+Enter for new line | Drop files to analyze</p>
       </div>
     </div>
   );
